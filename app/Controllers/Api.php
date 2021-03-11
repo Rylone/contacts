@@ -69,7 +69,14 @@ class Api extends BaseController
                     ]
                 ]
                 ]);
-           
+                
+                if ($this->validate->hasError('firstName'))
+                {
+                    echo $validation->getError('firstName');
+                }    
+                        
+
+
         
          
         }
