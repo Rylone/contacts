@@ -27,11 +27,12 @@ class BaseController extends Controller
 	 *
 	 * @var array
 	 */
-	protected $helpers = [];
+	protected $helpers = ['form'];
 
 	/**
 	 * Constructor.
 	 *
+	 * 
 	 * @param RequestInterface  $request
 	 * @param ResponseInterface $response
 	 * @param LoggerInterface   $logger

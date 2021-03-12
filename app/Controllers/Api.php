@@ -44,43 +44,174 @@ class Api extends BaseController
                 $error = ["response" => "Ce contact n'existe pas"];
                 return $this->response->setJSON($error);
             }
-        return $this->response->setJSON($listContacts);
+         return $this->response->setJSON($listContacts);
 
         //$listContacts->setHeader('Content-Type: application/json');
 
         //echo json_encode($listContacts);
 	}
 
+    
+    /*******************************************************************************************************
+     ** Function create a contact with params infos of form 
+
+     *** Method POST, avec la method $this->request->getVar()
+
+     **** Values : 
+          - lastName:string, 
+          - fistName:string, 
+          - company:string, 
+          - job:string, 
+          - email:email, 
+          - phone:integer, 
+          - note:string, 
+          - favory:string, 
+          - image:string/file,
+          - createDate:datetime
+
+     ****** Retourne true pour le succes de la creation du contact, ou return false lors d'une erreur lors de la creation du contact
+
+     ******* En cas de true j'affiche un message de succes et en cas de false je renvois un message d'erreur
+
+     ******** Les champs obligatoires : un telephone, un prenom
+    ******************************************************************************************************/
+	public function create ()
+	{
+        $etatActions = ['response' => false];
+
+        // On récupère le nom et le téléphone du nouveau contact
+        $nameContact = $this->request->getVar('firstName');
+        $phoneContact = $this->request->getVar('phone');
+        
+        // Si les valeurs du formulaire existent et ne sont pas vides
+       $rules = [
+           'firstName' => 'required',
+           'phone'     => 'required'
+       ];
+
+    // Si les champs sont remplis 
+       if($this->validate($rules))
+        {
+            // on remplit le tableau de reponse avec true et l'envoi des données
+            $etatActions['response'] = true;
+            $etatActions["data"] = [
+                'firstName' => $nameContact,
+                'phone' => $phoneContact,
+                
+            ];
+            
+            // On enregistre les données saisies dans un tableau afin de les inserer en base de donnéees
+            $addContact = [
+                'first_Name'=> $nameContact,
+                'phone' => $phoneContact
+            ];
+
+            // On insère  les nouvelles données en base de données
+            $insert = $this->contactsModel->save($addContact);
+          //  $etatActions['data']['id'] = $insert->insertID();
+
+        } else {
+            if(empty($nameContact))
+            {
+                $etatActions['response'] = false;
+                $etatActions['error']['fistName'] = "champs requis" ;  
+            }
+            if(empty($phoneContact))
+            {
+                $etatActions['response'] = false;
+                $etatActions['error']['phone'] = "champs requis" ;  
+            }
+        }   
+
+        return $this->response->setJSON($etatActions);
+    }
+
     /*******************************************
      * Function edit with params id of contact
+     * On vérifie l'existence d'un id 
+     * 
     *******************************************/
 	public function edit ()
 	{
-        $idContact = $this->request->getVar('idContact');
-        $save = $this->request->getVar('update');
-        // si le formulaire est soumit
-        if(isset($save))
-        {
-            $this->validate->setRules([
-                'firstName' => [
-                    'rules'  => 'required|is_unique[contacts.first_Name]',
-                    'errors' => [
-                        'required' => 'All accounts must have {field} provided'
-                    ]
-                ]
-                ]);
-                
-                if ($this->validate->hasError('firstName'))
-                {
-                    echo $validation->getError('firstName');
-                }    
-                        
+        $etatActions = ['response' => false];
 
+        // On récupère les données saisies
+        $nameContact = $this->request->getVar('firstName');
+        $phoneContact = $this->request->getVar('phone');
 
+        // on recupère l'id du contact existant
+        $id = $this->request->getVar('idContact');
         
-         
-        }
-       
+        // Si les valeurs du formulaire existent et ne sont pas vides
+       $rules = 
+       [
+           'firstName' => 'required',
+           'phone'     => 'required',
+           'idContact' => 'required'
+       ];
+
+        // Si les champs sont remplis 
+       if($this->validate($rules))
+        {
+            // On verifie l'existence du contact si l'id existe en post
+            $ContactID = $this->contactsModel->where('id', $id)->first();
+           
+
+             //Si il existe un contact avec l'id saisie
+            if(!empty($ContactID))
+            {
+                // On enregistre les données saisies dans un tableau pour leur mise a jour en base de donnéees
+                $updateContact = [
+                    'first_Name'=> $nameContact,
+                    'phone' => $phoneContact
+                    ];
+
+                    // Si le champs n'est pas null on fait la mise a jour sinon on garde les données que l'on a deja en base de donnée
+                   if($this->request->getVar('nom') != '')
+                    {
+                        $updateContact['last_Name'] = $this->request->getVar('nom');
+                    }
+        
+                // On met à jour les nouvelles données en base de données 
+                $this->contactsModel->where('id', $ContactID['id'])
+                                    ->set($updateContact)
+                                    ->update();
+                // on envvoie un message de success true au serveur
+                $etatActions['response'] = true;
+                // renvoi les données saisie 
+                $etatActions["data"] = [
+                                    'firstName' => $nameContact,
+                                    'phone' => $phoneContact,
+                                    'idContact' => $id
+                                   // 'all' => $allContact
+                                ];  
+                       
+            } else {
+           // Si l'identifiant n'existe pas on envoie un message d'erreur 
+            $etatActions['response'] = false;
+            $etatActions['error']['id'] = "Cet identifiant n'existe pas" ;  
+            }
+        } else {
+            // Si l'un des champs saisie est vide on retourne un message d'erreur
+            if(empty($nameContact))
+            {
+                $etatActions['response'] = false;
+                $etatActions['error']['fistName'] = "champs requis" ;  
+            }
+            if(empty($id))
+            {
+                $etatActions['response'] = false;
+                $etatActions['error']['id'] = "Veuillez saisir un id" ;  
+            }
+
+            if(empty($phoneContact))
+            {
+                $etatActions['response'] = false;
+                $etatActions['error']['phone'] = "champs requis" ;  
+            }
+        }   
+
+        return $this->response->setJSON($etatActions);
 	}
 
     /*********************************************
