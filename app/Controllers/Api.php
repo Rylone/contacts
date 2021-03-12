@@ -188,8 +188,8 @@ class Api extends BaseController
                        
             } else {
            // Si l'identifiant n'existe pas on envoie un message d'erreur 
-            $etatActions['response'] = false;
-            $etatActions['error']['id'] = "Cet identifiant n'existe pas" ;  
+                $etatActions['response'] = false;
+                $etatActions['error']['id'] = "Cet identifiant n'existe pas" ;  
             }
         } else {
             // Si l'un des champs saisie est vide on retourne un message d'erreur
